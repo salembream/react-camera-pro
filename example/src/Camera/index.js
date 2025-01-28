@@ -74,6 +74,7 @@ var Cam = styled.video(templateObject_4 || (templateObject_4 = __makeTemplateObj
 });
 var Canvas = styled.canvas(templateObject_5 || (templateObject_5 = __makeTemplateObject(["\n  display: none;\n"], ["\n  display: none;\n"])));
 var templateObject_1, templateObject_2, templateObject_3, templateObject_4, templateObject_5;
+//# sourceMappingURL=styles.js.map
 
 var Camera = React.forwardRef(function (_a, ref) {
     var _b = _a.facingMode, facingMode = _b === void 0 ? 'user' : _b, _c = _a.aspectRatio, aspectRatio = _c === void 0 ? 'cover' : _c, _d = _a.numberOfCamerasCallback, numberOfCamerasCallback = _d === void 0 ? function () { return null; } : _d, _e = _a.videoSourceDeviceId, videoSourceDeviceId = _e === void 0 ? undefined : _e, _f = _a.errorMessages, errorMessages = _f === void 0 ? {
@@ -93,6 +94,13 @@ var Camera = React.forwardRef(function (_a, ref) {
     var _m = useState(false), permissionDenied = _m[0], setPermissionDenied = _m[1];
     var _o = useState(false), torchSupported = _o[0], setTorchSupported = _o[1];
     var _p = useState(false), torch = _p[0], setTorch = _p[1];
+    var mounted = useRef(false);
+    useEffect(function () {
+        mounted.current = true;
+        return function () {
+            mounted.current = false;
+        };
+    }, []);
     useEffect(function () {
         numberOfCamerasCallback(numberOfCameras);
     }, [numberOfCameras]);
@@ -103,7 +111,7 @@ var Camera = React.forwardRef(function (_a, ref) {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (!(stream && (navigator === null || navigator === void 0 ? void 0 : navigator.mediaDevices))) return [3 /*break*/, 4];
+                        if (!(stream && (navigator === null || navigator === void 0 ? void 0 : navigator.mediaDevices) && !!mounted.current)) return [3 /*break*/, 4];
                         supportedConstraints = navigator.mediaDevices.getSupportedConstraints();
                         track = stream.getTracks()[0];
                         if (!(supportedConstraints && 'torch' in supportedConstraints && track)) return [3 /*break*/, 4];
@@ -195,7 +203,7 @@ var Camera = React.forwardRef(function (_a, ref) {
         torchSupported: torchSupported,
     }); });
     useEffect(function () {
-        initCameraStream(stream, setStream, currentFacingMode, videoSourceDeviceId, setNumberOfCameras, setNotSupported, setPermissionDenied);
+        initCameraStream(stream, setStream, currentFacingMode, videoSourceDeviceId, setNumberOfCameras, setNotSupported, setPermissionDenied, !!mounted.current);
     }, [currentFacingMode, videoSourceDeviceId]);
     useEffect(function () {
         switchTorch(false).then(function (success) { return setTorchSupported(success); });
@@ -247,7 +255,7 @@ var shouldSwitchToCamera = function (currentFacingMode) { return __awaiter(void 
         }
     });
 }); };
-var initCameraStream = function (stream, setStream, currentFacingMode, videoSourceDeviceId, setNumberOfCameras, setNotSupported, setPermissionDenied) { return __awaiter(void 0, void 0, void 0, function () {
+var initCameraStream = function (stream, setStream, currentFacingMode, videoSourceDeviceId, setNumberOfCameras, setNotSupported, setPermissionDenied, isMounted) { return __awaiter(void 0, void 0, void 0, function () {
     var cameraDeviceId, switchToCamera, constraints, getWebcam;
     var _a;
     return __generator(this, function (_b) {
@@ -273,16 +281,26 @@ var initCameraStream = function (stream, setStream, currentFacingMode, videoSour
                     video: {
                         deviceId: cameraDeviceId,
                         facingMode: currentFacingMode,
-                        width: { ideal: 1920 },
-                        height: { ideal: 1920 },
                     },
                 };
                 if ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.mediaDevices) === null || _a === void 0 ? void 0 : _a.getUserMedia) {
                     navigator.mediaDevices
                         .getUserMedia(constraints)
-                        .then(function (stream) {
-                        setStream(handleSuccess(stream, setNumberOfCameras));
-                    })
+                        .then(function (stream) { return __awaiter(void 0, void 0, void 0, function () {
+                        var _a;
+                        return __generator(this, function (_b) {
+                            switch (_b.label) {
+                                case 0:
+                                    if (!isMounted) return [3 /*break*/, 2];
+                                    _a = setStream;
+                                    return [4 /*yield*/, handleSuccess(stream, setNumberOfCameras)];
+                                case 1:
+                                    _a.apply(void 0, [_b.sent()]);
+                                    _b.label = 2;
+                                case 2: return [2 /*return*/];
+                            }
+                        });
+                    }); })
                         .catch(function (err) {
                         handleError(err, setNotSupported, setPermissionDenied);
                     });
@@ -295,9 +313,18 @@ var initCameraStream = function (stream, setStream, currentFacingMode, videoSour
                         navigator.msGetUserMedia;
                     if (getWebcam) {
                         getWebcam(constraints, function (stream) { return __awaiter(void 0, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                setStream(handleSuccess(stream, setNumberOfCameras));
-                                return [2 /*return*/];
+                            var _a;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0:
+                                        if (!isMounted) return [3 /*break*/, 2];
+                                        _a = setStream;
+                                        return [4 /*yield*/, handleSuccess(stream, setNumberOfCameras)];
+                                    case 1:
+                                        _a.apply(void 0, [_b.sent()]);
+                                        _b.label = 2;
+                                    case 2: return [2 /*return*/];
+                                }
                             });
                         }); }, function (err) {
                             handleError(err, setNotSupported, setPermissionDenied);
@@ -311,12 +338,27 @@ var initCameraStream = function (stream, setStream, currentFacingMode, videoSour
         }
     });
 }); };
-var handleSuccess = function (stream, setNumberOfCameras) {
-    navigator.mediaDevices
-        .enumerateDevices()
-        .then(function (r) { return setNumberOfCameras(r.filter(function (i) { return i.kind === 'videoinput'; }).length); });
-    return stream;
-};
+var handleSuccess = function (stream, setNumberOfCameras) { return __awaiter(void 0, void 0, void 0, function () {
+    var tr, cp;
+    var _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                tr = stream.getVideoTracks()[0];
+                cp = tr.getCapabilities();
+                return [4 /*yield*/, tr.applyConstraints({
+                        width: (_a = cp.width) === null || _a === void 0 ? void 0 : _a.max,
+                        height: (_b = cp.height) === null || _b === void 0 ? void 0 : _b.max,
+                    })];
+            case 1:
+                _c.sent();
+                navigator.mediaDevices
+                    .enumerateDevices()
+                    .then(function (r) { return setNumberOfCameras(r.filter(function (i) { return i.kind === 'videoinput'; }).length); });
+                return [2 /*return*/, stream];
+        }
+    });
+}); };
 var handleError = function (error, setNotSupported, setPermissionDenied) {
     console.error(error);
     //https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
@@ -327,5 +369,6 @@ var handleError = function (error, setNotSupported, setPermissionDenied) {
         setNotSupported(true);
     }
 };
+//# sourceMappingURL=Camera.js.map
 
 export { Camera };
