@@ -259,9 +259,9 @@ const initCameraStream = async (
   if (navigator?.mediaDevices?.getUserMedia) {
     navigator.mediaDevices
       .getUserMedia(constraints)
-      .then((stream) => {
+      .then(async (stream) => {
         if (isMounted) {
-          setStream(handleSuccess(stream, setNumberOfCameras));
+          setStream(await handleSuccess(stream, setNumberOfCameras));
         }
       })
       .catch((err) => {
@@ -279,7 +279,7 @@ const initCameraStream = async (
         constraints,
         async (stream) => {
           if (isMounted) {
-            setStream(handleSuccess(stream, setNumberOfCameras));
+            setStream(await handleSuccess(stream, setNumberOfCameras));
           }
         },
         (err) => {
@@ -292,7 +292,17 @@ const initCameraStream = async (
   }
 };
 
-const handleSuccess = (stream: MediaStream, setNumberOfCameras: SetNumberOfCameras) => {
+const handleSuccess = async (stream: MediaStream, setNumberOfCameras: SetNumberOfCameras) => {
+  
+  const tr = stream.getVideoTracks()[0];
+
+  const cp = tr.getCapabilities();
+  await tr.applyConstraints({
+
+    width: cp.width?.max,
+    height: cp.height?.max,
+  });
+
   navigator.mediaDevices
     .enumerateDevices()
     .then((r) => setNumberOfCameras(r.filter((i) => i.kind === 'videoinput').length));
